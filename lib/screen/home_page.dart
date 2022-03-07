@@ -4,9 +4,9 @@ import 'package:pokedex/model/managers/pokedex_manager.dart';
 import 'package:pokedex/screen/pokemon_detail_page.dart';
 import 'package:pokedex/utils/debug_logger.dart';
 import 'package:pokedex/widget/pokemon_row.dart';
-import 'package:provider/provider.dart';
 import 'package:pokedex/constants.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -17,7 +17,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   late FixedExtentScrollController _controller;
-
+  late SharedPreferences sharePref;
   int index = 0;
   double _angle = 0.0;
   double _oldAngle = 0.0;
@@ -32,23 +32,33 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
-        backgroundColor: const Color.fromARGB(255, 246, 233, 162),
-        body: Stack(
-          children: [
-            Column(
-              children: [
-                buildPokemonsListAndImage(),
-                buildMiddleOverlay(),
-                buildScrollPokeballAndButtons(),
-              ],
+    return FutureBuilder(
+      future: SharedPreferences.getInstance(),
+      builder: (context, snapshot) {
+        if (snapshot.hasData) {
+          sharePref = snapshot.data! as SharedPreferences;
+          return SafeArea(
+            child: Scaffold(
+              backgroundColor: const Color.fromARGB(255, 246, 233, 162),
+              body: Stack(
+                children: [
+                  Column(
+                    children: [
+                      buildPokemonsListAndImage(),
+                      buildMiddleOverlay(),
+                      buildScrollPokeballAndButtons(),
+                    ],
+                  ),
+                  buildTopOverlay(context),
+                  buildRedCursor(),
+                ],
+              ),
             ),
-            buildTopOverlay(context),
-            buildRedCursor(),
-          ],
-        ),
-      ),
+          );
+        } else {
+          return const CircularProgressIndicator();
+        }
+      },
     );
   }
 
@@ -70,7 +80,26 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Image buildMiddleOverlay() => const Image(image: AssetImage("assets/bottomOverlay.png"));
+  Widget buildMiddleOverlay() {
+    return Stack(
+      children: [
+        const Image(image: AssetImage("assets/bottomOverlay.png")),
+        Padding(
+          padding: const EdgeInsets.only(top: 32.0, left: 20),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              "POKéDEX DE ${sharePref.getString('nickname')}",
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 17,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 
   /// Création de la ligne contenant la pokeball scrollable et les boutons de navigation
   Expanded buildScrollPokeballAndButtons() {
@@ -251,8 +280,7 @@ class _HomePageState extends State<HomePage> {
                         future: pokedexManager.currentPokemon.getPokemonDetails(),
                         builder: (context, snapshot) {
                           if (snapshot.hasData) {
-                            pokedexManager.currentPokemon.pokemonDetails =
-                                snapshot.data! as DetailedPokemon;
+                            pokedexManager.currentPokemon.pokemonDetails = snapshot.data! as DetailedPokemon;
                             return const PokemonDetailPage();
                           } else {
                             return const CircularProgressIndicator();
@@ -322,8 +350,7 @@ class _HomePageState extends State<HomePage> {
                   pokedexManager.pokedex.simplePokemonResponse.elementAt(value),
                 );
                 if ((value + 1) == pokedexManager.pokedex.simplePokemonResponse.length) {
-                  DebugLogger.debugLog(
-                      "home_page.dart", "onSelectedItemChanged", "⚠️ Load next page", 2);
+                  DebugLogger.debugLog("home_page.dart", "onSelectedItemChanged", "⚠️ Load next page", 2);
                   pokedexManager.addNextPokedexPage(pokedexManager.pokedex.nextPagination!);
                 }
               },
