@@ -1,5 +1,4 @@
 # Flutter Pokedex
-**Flutter Pokedex** est un projet projet développé par **Clément GUYON** dans le cadre du module "Développement Mobile" à l'école **Ynov Lyon Campus** 🎓. 
 
 L'objectif que je m'étais fixé était de créer une interface quasi-conforme au Pokedex de Pokémon version Diamant & Perle sortie le 28 Septembre 2006 :
  
